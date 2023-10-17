@@ -1,0 +1,11 @@
+"0","unique_county_days_by_state <- information_flags %>% "
+"0","  filter(state %in% c(""Indiana"", ""Iowa"", ""Kansas"", ""Nebraska"", ""Ohio"",  ""Wisconsin"")) %>% "
+"0","  filter(event_type_description == ""Fire - Canadian."") %>% "
+"0","  group_by(state, county) %>% "
+"0","  summarize(days = n_distinct(date))"
+"1","[38;5;254m`summarise()` has grouped output by 'state'. You can override using the `.groups` argument.[39m
+"
+"0","unique_county_days_by_state <- unique_county_days_by_state  %>% "
+"0","  group_by(state) %>% "
+"0","  summarize(county_days = sum(days))"
+"0",""

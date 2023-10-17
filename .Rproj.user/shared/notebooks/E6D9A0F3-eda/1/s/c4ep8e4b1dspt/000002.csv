@@ -1,0 +1,9 @@
+"0","# PM10"
+"0","highest_pm10_comparison <- information_flags %>% "
+"0","  filter(state %in% c(""Indiana"", ""Iowa"", ""Kansas"", ""Nebraska"", ""Ohio"",  ""Wisconsin"")) %>% "
+"0","  filter(event_type_description == ""Fire - Canadian."") %>% "
+"0","  filter(pollutant_name == ""PM10 Total 0-10um STP"") %>% "
+"0","  group_by(airs_monitor_id, state, county, date) %>% "
+"0","  summarize(mean = mean(sample_value))"
+"1","[38;5;254m`summarise()` has grouped output by 'airs_monitor_id', 'state', 'county'. You can override using the `.groups` argument.[39m
+"

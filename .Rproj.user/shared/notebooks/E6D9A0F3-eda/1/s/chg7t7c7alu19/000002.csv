@@ -1,0 +1,5 @@
+"0","midwest_states_and_counties <- information_flags %>% "
+"0","  filter(state %in% c(""Indiana"", ""Iowa"", ""Kansas"", ""Nebraska"", ""Ohio"",  ""Wisconsin"")) %>% "
+"0","  filter(event_type_description == ""Fire - Canadian."") %>% "
+"0","  distinct(state, county, pollutant_name)"
+"0",""

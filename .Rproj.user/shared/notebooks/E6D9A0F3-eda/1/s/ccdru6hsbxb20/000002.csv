@@ -1,0 +1,6 @@
+"0","unique_counties_by_state <-  information_flags %>% "
+"0","  filter(state %in% c(""Indiana"", ""Iowa"", ""Kansas"", ""Nebraska"", ""Ohio"",  ""Wisconsin"")) %>% "
+"0","  filter(event_type_description == ""Fire - Canadian."") %>% "
+"0","  group_by(state) %>% "
+"0","  summarize(counties_flagged = n_distinct(county))"
+"0",""
