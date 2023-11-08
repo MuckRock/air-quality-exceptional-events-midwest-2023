@@ -1,0 +1,475 @@
+---
+title: "Findings and data for fact-checking"
+execute:
+  output: false
+  echo: false
+format:
+  html:
+    code-tools: true
+    theme: cosmo
+    toc: true
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(readxl)
+library(lubridate)
+library(plotly)
+library(htmltools)
+library(DT)
+library(tidycensus)
+library(censusapi)
+Sys.setenv(CENSUS_KEY="f0c4bf511063de6900e4007c6f8fef68641af8d7")
+```
+
+
+
+# PurpleAir Readings and Correction
+- Historical PurpleAir data was retrieved for two monitors:
+  - [Woodstock monitor](https://map.purpleair.com/1/a/ls/mAQI/a10/p604800/cC0?select=169723#14.06/42.31516/-88.46578) belonging to Jessica Beverly
+  - [LVEJO monitor #5](https://map.purpleair.com/1/a/ls/mAQI/a10/p604800/cC0?select=7920#12.91/41.85461/-87.7342) in Little Village
+- This data was then corrected using [EPA's correction formula](https://cfpub.epa.gov/si/si_public_file_download.cfm?p_download_id=544231&Lab=CEMM) (Page 26 of slides)
+- The data was then cleaned using quality control in three parts: eliminating hourly data with greater than 68% variance between A and B channels, aggregating to daily averages and eliminating daily averages that did not contain 90% of the total amount of hourly readings for that day 
+- The code for this can be found in the folder etl/purple_air_correction.R
+
+```{r}
+corrected_purpleair_data <- read_csv(here("data", "processed", "purple_air_little_village_woodstock.csv")) %>% 
+  select(date, little_village, woodstock)
+```
+```{r}
+#| output: true
+#| column: page
+
+datatable(corrected_purpleair_data, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+# Ozone spikes 
+- Data was retrieved using [EPA's concentration plot tool](https://www.epa.gov/outdoor-air-quality-data/air-data-concentration-plot) which allows you to pull data for areas pre-aggregated to the relevant standard. In our case, this is the 8-hour 2015 ozone rule of .07 parts per million
+- In the copy, this data underlies the following sentence: "On July 25, one of the smokiest days, an EPA air monitor in Chicago recorded **ozone concentrations 17% higher than the EPA standard**, according to publicly available EPA data. In Elgin, an air monitor captured ozone levels **20% higher than the standard**. From Northbrook, up to Zion, Kenosha and Sheboygan, monitors recorded levels at about **30% or higher than the EPA standard on that day.**"
+
+
+```{r}
+# Load data from ozone monitors in and around Chicago to compare 
+chicago <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "com_ed_chicago_ozone_max_2023.csv")) %>% 
+  mutate(name = "chicago")
+elgin <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "kane_ozone_max_2023.csv")) %>% 
+   mutate(name = "elgin")
+zion <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "zion_ozone_max_2023.csv")) %>% 
+   mutate(name = "zion")
+northbrook <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "northbrook_ozone_max_2023.csv"))  %>% 
+   mutate(name = "northbrook")
+kenosha <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "kenosha_ozone_max_2023.csv")) %>% 
+   mutate(name = "kenosha")
+sheboygan <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "sheboygan_ozone_max_2023.csv"))%>% 
+   mutate(name = "sheboygan")
+
+all_cities <- rbind(chicago, elgin, zion, northbrook, kenosha, sheboygan)
+
+july_25 <- all_cities %>% 
+  filter(Date == "07/25/2023") %>% 
+  select(Date, Source, name, `Site Name`, `Daily Max 8-hour Ozone Concentration`, DAILY_AQI_VALUE) %>% 
+  rename(Location = name) %>% 
+  mutate(percent_above_standard = signif((`Daily Max 8-hour Ozone Concentration` - .07)/((`Daily Max 8-hour Ozone Concentration` + .07)/2), digits = 2))%>% 
+  clean_names()
+```
+
+```{r}
+#| output: true
+#| column: screen
+
+datatable(july_25, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+# Informational Flagged Data 
+- AQS data for all states besides Michigan were flagged for informational purposes and obtained from the EPA through email on August 28, 2023. 
+- Data from Michigan was obtained by John Lippert through a public records request after August 28, 2023. 
+
+
+```{r}
+fips <- as.data.frame(fips_codes) %>% 
+  mutate(state_county_fips = paste0(state_code, county_code)) %>%  
+  select(state_name, county, state_county_fips) %>% 
+  rename(state = state_name)
+
+information_flags <- read_csv(here("data", "raw", "epa_informational_flags", "epa_national_informational_ee.csv")) %>% 
+  clean_names() %>% 
+  mutate(state_county_fips = str_remove(str_sub(airs_monitor_id, 1, 6), pattern= "-")) %>% 
+  left_join(fips, by = "state_county_fips") %>% 
+  mutate(date = date(sample_date_time))
+
+```
+
+
+## PM2.5 Flags 
+- In the copy, this data underlies the following sentence: "From **Cleveland, Ohio, to Madison, Wisconsin, to Clinton, Iowa,** air agencies flagged monitors that registered daily averages of PM2.5 spiking at levels **categorized as 'very unhealthy,'** by the U.S. EPA's Air Quality Index. Everyone is at risk for health effects under this ranking."
+- 24-hour average concentrations of above 150 micrograms of PM2.5 are "very unhealthy" according to [the AQI calculator](https://www.airnow.gov/aqi/aqi-calculator-concentration/)
+```{r}
+# PM25
+highest_pm25_comparison <- information_flags %>% 
+  filter(state %in% c("Indiana", "Iowa", "Kansas", "Nebraska", "Ohio",  "Wisconsin")) %>% 
+  filter(event_type_description == "Fire - Canadian.") %>% 
+  filter(pollutant_name == "PM2.5 - Local Conditions") %>% 
+  group_by(airs_monitor_id, state, county, date) %>% 
+  summarize(daily_avg = round(mean(sample_value), digits = 0), num_readings = n()) %>% 
+  filter(date == "2023-06-28")
+
+# Cleveland: 39-035-0038-88101-3 /  St Theodosius
+# Madison: 55-025-0047-88101-3 / MADISON - UNIVERSITY AVE WELL #6
+# Clinton: 19-045-0019-88101-3 / CLINTON, CHANCY PARK
+
+
+```
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(highest_pm25_comparison, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+## Wisconsin flags
+- In the copy, this data underlies the following sentence: "All told, Wisconsin **flagged data in 27 of its counties** to potentially reference later in an exceptional events request due to 2023 Canadian fires and **almost all the days between the first week of May and the end of June**, according to EPA data obtained by MuckRock."
+
+
+```{r}
+wisconsin_counties <- information_flags %>%
+  filter(state == "Wisconsin") %>% 
+  filter(event_type_description == "Fire - Canadian.") %>% 
+  distinct(county)
+```
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(wisconsin_counties, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+```{r}
+wisconsin_days <- information_flags %>%
+  filter(state == "Wisconsin") %>% 
+  filter(event_type_description == "Fire - Canadian.") %>% 
+  distinct(date)
+
+```
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(wisconsin_days, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+## Michigan data
+- In the copy, this data underlies the following sentence: "Michigan **flagged 22 counties for elevated ozone** and **13 for particulates on July 25** alone."
+
+```{r}
+michigan_may <- read_excel(here("data", "raw", "epa_informational_flags", "michigan_foia_2023_AQS_Flagging_Information.xlsx"), sheet = 2, skip = 1) %>% clean_names() %>% 
+  select(date_s_of_events, county, naaqs)
+
+michigan_june <- read_excel(here("data", "raw", "epa_informational_flags", "michigan_foia_2023_AQS_Flagging_Information.xlsx"), sheet = 3, skip = 1) %>% clean_names() %>% 
+  select(date_s_of_events, county, naaqs)
+
+michigan_july <- read_excel(here("data", "raw", "epa_informational_flags", "michigan_foia_2023_AQS_Flagging_Information.xlsx"), sheet = 4, skip = 1) %>% clean_names() %>% 
+  select(date_s_of_events, county, naaqs)
+
+michigan_flags <- rbind(michigan_may, michigan_june, michigan_july)
+
+michigan_ozone_counties <- michigan_flags %>% 
+  filter(naaqs == "Ozone") %>% 
+  filter(!is.na(county)) %>% 
+  distinct(county)
+  
+michigan_particulates_july_25 <- michigan_flags %>% 
+  rename(date = date_s_of_events) %>% 
+  filter(date == "7/25/23") %>% 
+  filter(!naaqs == "Ozone") %>% 
+  distinct(date, county, naaqs)
+
+
+```
+
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(michigan_ozone_counties, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(michigan_particulates_july_25, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+## Iowa, Kansas, and Nebraska
+- In the copy, this data underlies the following sentence: "Three states, **Iowa, Kansas, and Nebraska, flagged 2023 data** even though **they haven't filed an exceptional application since the rule was modified in 2016**, according to local and EPA records obtained by MuckRock."
+- The latter part of the sentence can be verified through our FOIA request to [Region 7](https://www.epa.gov/aboutepa/regional-and-geographic-offices) that returned [no responsive documents for exceptional event demonstrations since 2016](https://www.muckrock.com/foi/united-states-of-america-10/re-expedited-freedom-of-information-act-request-environmental-protection-agency-region-7-141663/)
+```{r}
+region_7_monitors_flagged <- information_flags %>% 
+  filter(state %in% c("Iowa", "Kansas", "Nebraska")) %>% 
+  filter(event_type_description == "Fire - Canadian.") %>% 
+  distinct(airs_monitor_id, state, county, agency_desc, event_type_description)
+```
+
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(region_7_monitors_flagged, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+
+# Data underlying visualizations 
+
+
+## Canadian acres burned 
+- Data was retrieved from [Canadian Interagency Fire Centre](https://ciffc.net/statistics) and entered by hand into spreadsheet, then converted to acres
+
+
+```{r}
+hectares <- read_csv(here("data", "manual", "canadian_areas_burned_1993_2023.csv"))
+acres <- read_csv(here("data", "manual", "canada_acres_burned.csv"))
+```
+
+![Area burned screenshot](screenshot_canadian_areas_burned_1993_2023.png)
+
+
+### Hectares manual entry 
+```{r}
+#| output: true
+#| column: page
+
+datatable(hectares, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+### Converted to acres 
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(acres, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+
+
+
+
+
+```
+
+
+## PurpleAir Chart
+```{r}
+#| output: true
+#| column: page
+
+datatable(corrected_purpleair_data, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+## Ozone spikes 
+
+
+```{r}
+ozone_spikes <- read_csv(here("data", "processed", "all_cities_daily_max_ozone_2023.csv")) %>% 
+  select(-1)
+```
+
+```{r}
+#| output: true
+#| column: page
+
+datatable(ozone_spikes, filter = 'top', class = 'cell-border stripe order-column', extensions = 'Buttons',
+
+                            options = list(
+                                paging = TRUE,
+                                searching = TRUE,
+                                fixedColumns = TRUE,
+                                autoWidth = TRUE,
+                                ordering = TRUE,
+                                dom = 'tB',
+                                buttons = c('copy', 'csv', 'excel')
+                            ))
+
+  
+
+
+```
+
+
+
+
+## Attainment map
+- Shapefiles for the attainment map were downloaded directly [from the U.S. Department of Transportation open data portal](https://data-usdot.opendata.arcgis.com/datasets/usdot::nonattainment-area-8-hr-ozone-2015-standard/explore?location=41.537632%2C-85.752030%2C7.00)
+
+
+
+
+
+
+
+

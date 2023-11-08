@@ -1,0 +1,44 @@
+Progress Logs
+-------------
+Number of Sensors: 2
+Number of Read Keys: 1
+Start Timestamp: 2023-04-01
+End Timestamp: 2023-10-01
+Average: 60
+Fields: pm2.5_atm_a,pm2.5_atm_b,pm2.5_cf_1,pm2.5_cf_1_a,pm2.5_cf_1_b,pm2.5_alt,pm2.5_alt_a,pm2.5_alt_b,pm2.5_atm,humidity,humidity_a,humidity_b
+-------------
+Starting requests for sensor 7920.
+Making request 1.
+Making request 2.
+Making request 3.
+Making request 4.
+Making request 5.
+Making request 6.
+Making request 7.
+Making request 8.
+Making request 9.
+Making request 10.
+Making request 11.
+Making request 12.
+Making request 13.
+Making request 14.
+Data download completed for sensor 7920.
+
+Starting requests for sensor 169723.
+Making request 15.
+Making request 16.
+Making request 17.
+Making request 18.
+Making request 19.
+Making request 20.
+Making request 21.
+Making request 22.
+Making request 23.
+Making request 24.
+Making request 25.
+Making request 26.
+Making request 27.
+Making request 28.
+Data download completed for sensor 169723.
+
+Download request has been completed.
