@@ -24,7 +24,7 @@ We recieved this data in an email request to the EPA. Flagging data with a "requ
 
 These flags are not necessarily a step towards the exceptional events rule, but rather a note for the agency as they earmark data they may want to review later to request this data be excluded through the exceptional events rule.
 
-This data is a snapshot in time and represents data flagged from May 1, 2023 to Aug. 31, 2023 as of August 28, 2023.
+This data is a snapshot in time and represents data flagged from May 1, 2023 to Aug. 31, 2023 as of Aug. 28, 2023.
 
 These data are stored in [`data/raw/epa_informational_flags`](data/raw/epa_informational_flags).
 
