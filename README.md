@@ -38,7 +38,7 @@ These are stored in [`data/manual`](data/manual).
 ### PurpleAir Correction 
 PurpleAir sensor data was adjusted using [an Environmental Protection Agency formula, or correction](https://cfpub.epa.gov/si/si_public_record_report.cfm?dirEntryId=353088&Lab=CEMM), that [improves the accuracy of readings during smoke events](https://community.purpleair.com/t/is-there-a-field-that-returns-data-with-us-epa-pm2-5-conversion-formula-applied/4593). 
 
-The data was then cleaned using quality control in three parts: eliminating hourly data with greater than 68% difference between A and B channels, aggregating to daily averages and eliminating daily averages that did not contain 90% of the total amount of hourly readings for that day
+The data was then cleaned using quality control in three parts: eliminating hourly data with greater than 68% difference between A and B channels, aggregating the data to daily averages and, lastly, eliminating daily averages that did not contain 90% of the total amount of hourly readings for that day. 
 
 
 The code for this can be found in [`etl/purple_air_correction.R`](etl/purple_air_correction.R). 
