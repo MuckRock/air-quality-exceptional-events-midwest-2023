@@ -7,7 +7,7 @@ This repository contains data and findings for a collaboration between MuckRock 
 You can find earlier "Smoke, Screened" data and analysis in [`air-quality-exceptional-events`](https://github.com/MuckRock/air-quality-exceptional-events) and [`gao-wildfire-exceptions`](https://github.com/MuckRock/gao-wildfire-exceptions). Even more data and analysis driving the investigations of MuckRock's news team are cataloged in [`news-team`](https://github.com/MuckRock/news-team).
 
 ## Data 
-All raw data can be found in [`data/raw`](data/raw), any data that involved manual work, like data entry, can be found in [`data/manual`](data/manual). The scripts to clean and organize this data can be found in [`etl`](etl) and the output of those scripts can be found in [`data/processed`](data/processed). Processed data is used for [`analysis`](data/analysis) and visualization.
+All raw data can be found in [`data/raw`](data/raw), any data that involved manual work, like data entry, can be found in [`data/manual`](data/manual). The scripts to clean and organize this data can be found in [`etl`](etl) and the output of those scripts can be found in [`data/processed`](data/processed). Processed data is used for [`analysis`](analysis) and visualization.
 
 ## PurpleAir readings
 We retrieved historical PurpleAir sensor readings using PurpleAir's "Data Download Tool" for two sensors: 
