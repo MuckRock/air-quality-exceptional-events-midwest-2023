@@ -20,7 +20,7 @@ The EPA's [Concentration Plot lookup tool](https://www.epa.gov/outdoor-air-quali
 
 These data are stored in [`data/raw/ozone_8_hour_maxes_2023`](data/raw/ozone_8_hour_maxes_2023). 
 ## EPA AQS data "flagged" for "information" 
-Flagging data with a "request exclusion" flag in AQS is one of the first steps in the exceptional events process, though agencies can also add an "informational" flag to data as well. 
+Flagging data with a "request exclusion" flag in AQS is one of the first steps in the exceptional events process, though agencies can also add an "informational" flag to data as well. We recieved this data in an email request to the EPA. 
 
 These flags are not necessarily a step towards the exceptional events rule, but rather a note for the agency as they earmark data they may want to review later to request this data be excluded through the exceptional events rule.
 
