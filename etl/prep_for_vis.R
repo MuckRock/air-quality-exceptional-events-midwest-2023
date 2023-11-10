@@ -5,22 +5,22 @@ library(lubridate)
 library(geojsonio)
 library(sf)
 
-chicago <- read_csv(here("data", "raw", "com_ed_chicago_ozone_max_2023.csv"))
-muskegon <- read_csv(here("data", "raw", "muskegon_ozone_max_2023.csv"))
-cleveland <- read_csv(here("data", "raw", "district_6_cleveland_ozone_max_2023.csv"))
+chicago <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "com_ed_chicago_ozone_max_2023.csv"))
+muskegon <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "muskegon_ozone_max_2023.csv"))
+cleveland <- read_csv(here("data", "raw", "ozone_8_hour_maxes_2023", "district_6_cleveland_ozone_max_2023.csv"))
 
 all_cities <- rbind(chicago, cleveland, muskegon) %>% 
   mutate(Date = mdy(Date)) %>% 
   filter(Date >= "2023-05-01" & Date <= "2023-06-30") %>% 
   filter(!Source == "AirNow") %>% 
-  mutate(name = case_when(`Site Name` == "COM ED MAINTENANCE BLDG" ~ "Chicago",
-                         `Site Name` == "District 6" ~ "Cleveland",
-                         TRUE ~ "Muskegon")) %>% 
+  mutate(name = case_when(`Site Name` == "COM ED MAINTENANCE BLDG" ~ "Chicago nonexceedence",
+                         `Site Name` == "District 6" ~ "Cleveland nonexceedence",
+                         TRUE ~ "Muskegon nonexceedence")) %>% 
   select(Date, `Daily Max 8-hour Ozone Concentration`, name) %>% 
   mutate(exceedence = case_when(`Daily Max 8-hour Ozone Concentration` > .07 ~ "Y", TRUE ~ "N")) %>% 
-  mutate(name = case_when(name == "Chicago" & exceedence == "Y" ~ "Chicago, IL",
-                          name == "Muskegon" & exceedence == "Y" ~ "Muskegon, MI",
-                          name == "Cleveland" & exceedence == "Y" ~ "Cleveland, OH",
+  mutate(name = case_when(name == "Chicago nonexceedence" & exceedence == "Y" ~ "Chicago",
+                          name == "Muskegon nonexceedence" & exceedence == "Y" ~ "Muskegon, MI",
+                          name == "Cleveland nonexceedence" & exceedence == "Y" ~ "Cleveland",
                           TRUE ~ name))
   
 
